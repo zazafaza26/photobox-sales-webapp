@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Photobox Sales Input</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+    label { display: block; margin-top: 15px; }
+    select, input { width: 100%; padding: 8px; margin-top: 5px; }
+    button { margin-top: 20px; padding: 10px; width: 100%; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; }
+    .error { color: red; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <h2>Photobox Sales Input</h2>
+
+  
+
+  <label>Frame
+    <select id="frame">
+      <option value="Photo Signature">Photo Signature</option>
+      <option value="Character">Character</option>
+      <option value="High Angle">High Angle</option>
+    </select>
+  </label>
+
+  <label>Format
+    <select id="format">
+      <option value="Original">Original</option>
+      <option value="Big Size">Big Size</option>
+    </select>
+  </label>
+
+  <label>Number of Strip
+    <input type="number" id="numStrip" min="2" required />
+    <div class="error" id="stripError"></div>
+  </label>
+
+  
+
+  <label>Discount
+    <select id="discount">
+      <option value="No">No</option>
+      <option value="IDR 10000">IDR 10000</option>
+      <option value="IDR 20000">IDR 20000</option>
+      <option value="IDR 30000">IDR 30000</option>
+      <option value="Free">Free</option>
+    </select>
+  </label>
+
+  <label>Channel
+    <select id="channel">
+      <option value="Cash">Cash</option>
+      <option value="QRIS">QRIS</option>
+    </select>
+  </label>
+
+  <button onclick="submitData()">Submit</button>
+
+  <div id="resultMsg"></div>
+
+  <script>
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbyeGEwOaDvKaXZ1ahA9ebHHC-WRRDeOhGX_oYYxR_6T1eI42btXLHIZtRUrXOPrwH1B/exec'; // Replace this with your Google Apps Script web app URL
+
+    function calculatePrice(frame, format, numStrip) {
+      let pricePerStrip = 0;
+      if (frame === 'Photo Signature') {
+        pricePerStrip = format === 'Original' ? 25000 : 30000;
+      } else if (frame === 'Character') {
+        pricePerStrip = format === 'Original' ? 35000 : 40000;
+      } else if (frame === 'High Angle') {
+        pricePerStrip = format === 'Original' ? 30000 : 35000;
+      }
+      return pricePerStrip * numStrip;
+    }
+
+    function isEven(n) {
+      return n % 2 === 0;
+    }
+
+    async function submitData() {
+      const customerNumber = document.getElementById('customerNumber').value.trim();
+      const frame = document.getElementById('frame').value;
+      const format = document.getElementById('format').value;
+      const numStrip = parseInt(document.getElementById('numStrip').value);
+      const channel = document.getElementById('channel').value;
+      const discount = document.getElementById('discount').value;
+      const stripError = document.getElementById('stripError');
+      const resultMsg = document.getElementById('resultMsg');
+
+      stripError.textContent = '';
+      resultMsg.textContent = '';
+
+      if (isNaN(numStrip) || numStrip < 2) {
+        stripError.textContent = 'Minimum 2 strips are required.';
+        return;
+      }
+      if (format === 'Original' && !isEven(numStrip)) {
+        stripError.textContent = 'Original format must have an even number of strips.';
+        return;
+      }
+
+      const price = calculatePrice(frame, format, numStrip);
+      let discountAmount = 0;
+      if (discount === 'IDR 10000') discountAmount = 10000;
+      else if (discount === 'IDR 20000') discountAmount = 20000;
+      else if (discount === 'IDR 30000') discountAmount = 30000;
+      else if (discount === 'Free') discountAmount = price;
+      const totalSales = Math.max(price - discountAmount, 0);
+      const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+
+      const data = {
+        timestamp,
+        customerNumber,
+        frame,
+        format,
+        numStrip,
+        price,
+        discountedPrice,
+        totalSales,
+        store,
+        channel
+      };
+
+      try {
+        const res = await fetch(scriptURL, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (res.ok) {
+          resultMsg.textContent = '✅ Data submitted successfully!';
+        } else {
+          resultMsg.textContent = '❌ Submission failed. Please try again.';
+        }
+      } catch (err) {
+        resultMsg.textContent = '❌ Error: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
