@@ -1,70 +1,18 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Photobox Sales Input</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 600px; margin: 30px auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
-    label { display: block; margin-top: 15px; }
-    select, input { width: 100%; padding: 8px; margin-top: 5px; }
-    button { margin-top: 20px; padding: 10px; width: 100%; background: #4CAF50; color: white; border: none; font-size: 16px; cursor: pointer; }
-    .error { color: red; font-size: 14px; }
-  </style>
-</head>
-<body>
-  <h2>Photobox Sales Input</h2>
-
-  
-
-  <label>Frame
-    <select id="frame">
-      <option value="Photo Signature">Photo Signature</option>
-      <option value="Character">Character</option>
-      <option value="High Angle">High Angle</option>
-    </select>
-  </label>
-
-  <label>Format
-    <select id="format">
-      <option value="Original">Original</option>
-      <option value="Big Size">Big Size</option>
-    </select>
-  </label>
-
-  <label>Number of Strip
-    <input type="number" id="numStrip" min="2" required />
-    <div class="error" id="stripError"></div>
-  </label>
-
-  
-
-  <label>Discount
-    <select id="discount">
-      <option value="No">No</option>
-      <option value="IDR 10000">IDR 10000</option>
-      <option value="IDR 20000">IDR 20000</option>
-      <option value="IDR 30000">IDR 30000</option>
-      <option value="Free">Free</option>
-    </select>
-  </label>
-
-  <label>Channel
-    <select id="channel">
-      <option value="Cash">Cash</option>
-      <option value="QRIS">QRIS</option>
-    </select>
-  </label>
-
-  <button onclick="submitData()">Submit</button>
-
-  <div id="resultMsg"></div>
-
   <script>
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbyeGEwOaDvKaXZ1ahA9ebHHC-WRRDeOhGX_oYYxR_6T1eI42btXLHIZtRUrXOPrwH1B/exec'; // Replace this with your Google Apps Script web app URL
-
-    function calculatePrice(frame, format, numStrip) {
+    // Function to calculate the price based on the selected options
+    function calculatePrice() {
+      const frame = document.getElementById('frame').value;
+      const format = document.getElementById('format').value;
+      const numStrip = parseInt(document.getElementById('numStrip').value);
+      const discount = document.getElementById('discount').value;
+      
+      // Price Logic
       let pricePerStrip = 0;
       if (frame === 'Photo Signature') {
         pricePerStrip = format === 'Original' ? 25000 : 30000;
@@ -73,72 +21,113 @@
       } else if (frame === 'High Angle') {
         pricePerStrip = format === 'Original' ? 30000 : 35000;
       }
-      return pricePerStrip * numStrip;
+      
+      let price = pricePerStrip * numStrip;
+      
+      // Apply discount
+      if (discount === 'IDR 10000') {
+        price -= 10000;
+      } else if (discount === 'IDR 20000') {
+        price -= 20000;
+      } else if (discount === 'IDR 30000') {
+        price -= 30000;
+      } else if (discount === 'Free') {
+        price = 0;
+      }
+      
+      // Update the price display
+      document.getElementById('price').textContent = "Price: IDR " + price.toLocaleString();
+      
+      // Return the price
+      return price;
     }
 
-    function isEven(n) {
-      return n % 2 === 0;
-    }
+    // Function to handle form submission
+    function handleSubmit(event) {
+      event.preventDefault();
 
-    async function submitData() {
-      const customerNumber = document.getElementById('customerNumber').value.trim();
       const frame = document.getElementById('frame').value;
       const format = document.getElementById('format').value;
-      const numStrip = parseInt(document.getElementById('numStrip').value);
-      const channel = document.getElementById('channel').value;
+      const numStrip = document.getElementById('numStrip').value;
       const discount = document.getElementById('discount').value;
-      const stripError = document.getElementById('stripError');
-      const resultMsg = document.getElementById('resultMsg');
-
-      stripError.textContent = '';
-      resultMsg.textContent = '';
-
-      if (isNaN(numStrip) || numStrip < 2) {
-        stripError.textContent = 'Minimum 2 strips are required.';
-        return;
-      }
-      if (format === 'Original' && !isEven(numStrip)) {
-        stripError.textContent = 'Original format must have an even number of strips.';
-        return;
-      }
-
-      const price = calculatePrice(frame, format, numStrip);
-      let discountAmount = 0;
-      if (discount === 'IDR 10000') discountAmount = 10000;
-      else if (discount === 'IDR 20000') discountAmount = 20000;
-      else if (discount === 'IDR 30000') discountAmount = 30000;
-      else if (discount === 'Free') discountAmount = price;
-      const totalSales = Math.max(price - discountAmount, 0);
-      const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' });
+      const channel = document.getElementById('channel').value;
+      
+      const price = calculatePrice();  // Calculate price before submitting
 
       const data = {
-        timestamp,
-        customerNumber,
-        frame,
-        format,
-        numStrip,
-        price,
-        discountedPrice,
-        totalSales,
-        store,
-        channel
+        timestamp: new Date(),
+        customerNumber: "", // Customer number will be auto-generated
+        frame: frame,
+        format: format,
+        numStrip: numStrip,
+        price: price,
+        discount: discount,
+        totalSales: price,  // Total sales equals price after discount
+        channel: channel
       };
 
-      try {
-        const res = await fetch(scriptURL, {
-          method: 'POST',
-          body: JSON.stringify(data),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (res.ok) {
-          resultMsg.textContent = '✅ Data submitted successfully!';
-        } else {
-          resultMsg.textContent = '❌ Submission failed. Please try again.';
+      // Send the data to the Apps Script web app
+      fetch('https://script.google.com/macros/s/AKfycbyeGEwOaDvKaXZ1ahA9ebHHC-WRRDeOhGX_oYYxR_6T1eI42btXLHIZtRUrXOPrwH1B/exec', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+          'Content-Type': 'application/json'
         }
-      } catch (err) {
-        resultMsg.textContent = '❌ Error: ' + err.message;
-      }
+      })
+      .then(response => response.text())
+      .then(result => {
+        alert('Data submitted successfully!');
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Failed to submit data');
+      });
     }
   </script>
+</head>
+<body>
+  <h1>Photobox Sales Input</h1>
+  <form onsubmit="handleSubmit(event)">
+    <label for="frame">Frame:</label>
+    <select id="frame" name="frame" required>
+      <option value="Photo Signature">Photo Signature</option>
+      <option value="Character">Character</option>
+      <option value="High Angle">High Angle</option>
+    </select>
+    <br>
+
+    <label for="format">Format:</label>
+    <select id="format" name="format" required>
+      <option value="Original">Original</option>
+      <option value="Big Size">Big Size</option>
+    </select>
+    <br>
+
+    <label for="numStrip">Number of Strips:</label>
+    <input type="number" id="numStrip" name="numStrip" min="2" required>
+    <br>
+
+    <label for="discount">Discount:</label>
+    <select id="discount" name="discount" required>
+      <option value="No">No</option>
+      <option value="IDR 10000">IDR 10000</option>
+      <option value="IDR 20000">IDR 20000</option>
+      <option value="IDR 30000">IDR 30000</option>
+      <option value="Free">Free</option>
+    </select>
+    <br>
+
+    <label for="channel">Payment Channel:</label>
+    <select id="channel" name="channel" required>
+      <option value="Cash">Cash</option>
+      <option value="QRIS">QRIS</option>
+    </select>
+    <br>
+
+    <h3 id="price">Price: IDR 0</h3>
+    <br>
+
+    <button type="submit">Submit</button>
+  </form>
 </body>
 </html>
