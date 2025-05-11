@@ -66,6 +66,9 @@
         channel: channel
       };
 
+      // Log the data to check if it's formatted correctly
+      console.log("Submitting data: ", data);
+
       // Send the data to the Apps Script web app
       fetch('https://script.google.com/macros/s/AKfycbyeGEwOaDvKaXZ1ahA9ebHHC-WRRDeOhGX_oYYxR_6T1eI42btXLHIZtRUrXOPrwH1B/exec', {
         method: 'POST',
@@ -76,6 +79,7 @@
       })
       .then(response => response.text())
       .then(result => {
+        console.log("Response from Google Apps Script: ", result);
         alert('Data submitted successfully!');
       })
       .catch(error => {
